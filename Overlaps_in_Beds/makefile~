@@ -1,0 +1,5 @@
+SRCS=GET_UNION.cpp
+HDRS=GET_UNION.hpp
+CXXFLAGS=-std=c++0x -O3
+test: $(SRCS) $(HDRS)
+	/software/gcc-4.6.0/bin/g++ $(CXXFLAGS) $(SRCS) -o $@

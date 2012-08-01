@@ -1,0 +1,14 @@
+#ifndef FOO_GARD
+#define FOO_GARD
+
+#include<isostream>
+#include <fstream>
+#include <algorithm>
+#include <vector>
+
+std:vector<unsigend int> *get_coverage(std::string file_name);
+
+#endif
+
+
+
