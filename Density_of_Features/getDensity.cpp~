@@ -1,0 +1,228 @@
+#include<string>
+#include<sstream>
+#include <iostream>
+#include<fstream>
+#include <algorithm>
+#include <vector>
+#include<set>
+#include <stdio.h>
+#include <time.h>
+
+
+
+
+
+
+
+#include "getDensity.hpp"
+
+using namespace std;
+
+int main(int argc, char *argv[])
+{
+
+if (argc < 3)
+  {
+    cout<<"usage: ./getDensity pathToOutput bed1 bed2 ..."<<endl;
+    cout<<"requited at least 2 arguments: the first is a path for the  output file and the second which is a bed file that you would like to look at its density"<<endl;
+    exit(0);
+  }
+ cout<< "*********************************************** NOTE: ***************************"<<endl;
+ cout<<"****  Note one: chr_name, segment_start, segment_end, wl and sz are paramteres that have been hard-coded into the code.****"<<endl;
+ cout<<"****  Note two: densites will be pirnted out into the output file where column one corresponds to the first bed file and so on. ****"<<endl;
+cout<< "*******************************************************************************"<<endl;
+
+ std::string output_path = argv[1];
+ 
+ 
+  // Initial parameters:
+  std::string chr_name       = "chr22";
+  unsigned int segment_start      = 16050000;
+  unsigned int segment_end        = 51304566;
+  unsigned int window_length      = 36;
+  unsigned int step_width         = 5;
+  // //  std::string output_path         = "/nfs/th_group/hk3/UWTFS/GM12878/CTCF";
+  // std::string file_A_tags         = "/nfs/th_group/hk3/UW_DNaseI_HS/Gm12878_For_Paper_Analysis/tages_with_score_less_than_2_sorted.bed";
+  // std::string file_B_tags         = "/nfs/th_group/hk3/UWTFS/GM12878/CTCF/wgEncodeUwTfbsGm12878CtcfStdAlnRep1_chr22.bed";
+  // std::string file_C_tags        = "/nfs/th_group/hk3/UW_DNaseI_HS/Gm12878_For_Paper_Analysis/wgEncodeUwDnaseGm12878AlnRep1_chr22_with_biasness_scores.bed";
+  
+  
+  std::string output_file_name = make_output_file_name(output_path, window_length, step_width);
+  std::vector< vector<unsigned int> > *densities = new vector<vector<unsigned int> >;
+
+  int bed_counter = 2;
+  while(bed_counter < argc){
+    std::string one_file = argv[bed_counter];
+    
+    vector<unsigned int> *density_of_tags_for_one_file = new vector<unsigned int>;
+    density_of_tags_for_one_file = get_density(segment_start, segment_end, window_length,  step_width, one_file);
+    densities->push_back(*density_of_tags_for_one_file);
+      bed_counter++;
+  }
+
+
+  
+
+//   //get densities for file file_A
+//   vector<unsigned int> *file_A_tags_densities = new vector<unsigned int>;
+//    file_A_tags_densities = get_density(segment_start, segment_end, window_length,  step_width, file_A_tags);
+//    unsigned int size_of_file_A_densities = file_A_tags_densities->size();
+//    densities->push_back(*file_A_tags_densities);
+ 
+//    //get deinsities for file_B
+//    vector<unsigned int> *file_B_tags_densities = new vector<unsigned int>;
+//    file_B_tags_densities = get_density(segment_start, segment_end, window_length,  step_width, file_B_tags);
+//    unsigned int size_of_file_B_densites = file_B_tags_densities->size();
+
+//    densities->push_back(*file_B_tags_densities);
+// //get densites for file_C
+//  vector<unsigned int> *file_C_tags_densities = new vector<unsigned int>;
+//  file_C_tags_densities = get_density(segment_start, segment_end, window_length,  step_width, file_C_tags);
+//  unsigned int size_of_file_C_densities = file_C_tags_densities->size();
+
+//  densities->push_back(*file_C_tags_densities);
+
+//  if ( (size_of_file_A_densities != size_of_file_B_densites) || (size_of_file_B_densites != size_of_file_C_densities) )
+//   {
+//     cerr<<"size of vetcors are different whereas expecting to get equi-size vectors!"<<endl;
+//   }
+
+  unsigned int s = densities->size();
+  cout<<"found  "<<s<<" files for density calculations"<<endl;
+
+
+ print_outdensities_v2(output_file_name,densities);
+
+ //print_out_densities(output_file_name, file_A_tags_densities, file_B_tags_densities, file_C_tags_densities );
+   return 0;
+}
+
+
+
+
+
+///////////////////////////////////// functions ////////////////////////////////////////////////
+
+
+
+
+void print_out_densities(std::string output_file, std::vector<unsigned int> *densites_A, std::vector<unsigned int> *densities_B, std::vector<unsigned int> *densities_C){
+  ofstream out(output_file);
+  if (! out.good())
+    {
+      cerr<<"cannot open file "<< output_file<< "to write the results into it!"<<endl;
+    }
+  unsigned int size = densites_A->size();
+  for (int i = 0; i < size; ++i){
+    out<<(*densites_A)[i]<<"\t"<<(*densities_B)[i]<<"\t"<<(*densities_C)[i]<<endl;
+    }
+  out.close();
+}/*print_out_densities*/
+
+std::string convert_int(unsigned int number){
+   stringstream ss;//create a stringstream
+   ss << number;//add number to the stream
+   return ss.str();//return a string with the contents of the stream
+}/*convert_int*/
+
+
+
+void print_outdensities_v2(std::string output_file, std::vector< vector<unsigned int> > *densities){
+  //get densities as a vecotr of vector print each of which
+
+  unsigned int number_of_rows = densities->size();
+  unsigned int number_of_cols = ((*densities)[0]).size();
+  ofstream out(output_file);
+  if (! out.good()){
+    cerr<<"cannot open file "<< output_file<<" to write the rusults into it!"<<endl;
+      
+    }
+  for(unsigned int j =0; j < number_of_cols; j++){
+    for (unsigned int i=0; i < number_of_rows; ++i){
+      out<< ((*densities)[i])[j]<<"\t";
+	
+      }
+    out<<endl;
+  }
+  out.close();
+}/*print_outdensities_v2*/
+
+
+
+
+
+
+
+std::string make_output_file_name(std::string path, unsigned int window_length, unsigned int step_size ){
+  std::string window_length_as_string = convert_int(window_length);
+  std::string step_size_as_string     = convert_int(step_size);
+  std::string output_file_name = path+"/density_wl_"+ window_length_as_string+"_sz_"+step_size_as_string+".txt";
+  return output_file_name;
+}/* make_out_file_name*/
+
+std::vector<unsigned int> *get_density(unsigned int segment_start, unsigned int segment_end, unsigned int window_length, unsigned int step_width, std::string bed_file){
+  /*this is to get the density of tags (given in a bed file) over a segment of chromosome which starts from segment_start and end at segment_end. It will count in a sliding manner with window_length and step_width*/
+
+  vector<unsigned int> *pDensities    = new vector<unsigned int>;
+  vector<unsigned int> *features_start_positions = new vector<unsigned int>;
+  features_start_positions = get_start_positions(bed_file);
+  //sort the positions if not aleardy sorted
+  if (! is_sorted(  features_start_positions->begin(), features_start_positions->end()  ))
+    {
+      sort(   features_start_positions->begin(), features_start_positions->end()  );
+    }
+  unsigned int number_of_features = features_start_positions->size();
+  unsigned int last_position = (*features_start_positions)[number_of_features-1];
+
+  unsigned end_point  = segment_end - window_length;
+  unsigned counted_tags = 0;
+ 
+   
+  for (int j = segment_start; j < end_point; j= j+step_width){
+    unsigned int upper_bound =  j+window_length;
+    unsigned int density  = 0;
+    // while( (counted_tags <= last_position )  &&  ( (*features_start_positions)[counted_tags] < upper_bound ) && ( (*features_start_positions)[counted_tags] >= j  ) ){
+    //   counted_tags++;
+    //   density++;
+    // }
+
+    std::vector<unsigned int>::iterator low, up;
+    low = lower_bound( features_start_positions->begin(),  features_start_positions->end(),j);
+    up  = lower_bound(features_start_positions->begin(),  features_start_positions->end(), upper_bound);
+    unsigned  int upper_value = int(up - features_start_positions->begin());
+    unsigned int lower_value   = int(low - features_start_positions->begin());
+     
+    density = upper_value - lower_value;
+    // cout<< "lower = " << lower_value<< " upper_value = "<< upper_value<<" density = "<< density<<endl; 
+    pDensities->push_back(density);
+    }
+  return pDensities;
+ 
+ }/*get_density*/
+
+
+
+vector<unsigned int> *get_start_positions(const std::string a_bed_file){
+  vector<unsigned int> *pStart_Positions = new vector<unsigned int>;
+  ifstream input( a_bed_file);
+  if(! input.good()){
+    cerr<< "coudn't open file "<<a_bed_file<<" to read the data"<<endl;
+  }
+  
+  std::string chr_name,source,strand, trash;
+  unsigned start, end;
+  double score;
+  while(input>>chr_name>>start>>end>>source>>score>>strand){
+    std::getline(input, trash);
+    //flip over if feature is in negative starnad
+    if(strand.compare("-") == 0 ){
+      start = end;
+    }
+    pStart_Positions->push_back(start);
+  }
+  input.close();
+  return pStart_Positions;
+}/*get_start_positions*/
+
+////////////////////////////////////////////////////////////////////////////////////////
+

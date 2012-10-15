@@ -1,0 +1,4 @@
+BedOverLaps snippet is supposed to look at the overlap of features from two bed files (A and B). It will return how many
+bases are in intersection, union,  A\B and B\A.  Please note these will be relative to the union. ie they all are divided by union.
+it requires three argument: two bed files that we want to look at their overlap situations:  A.bed B.Bed and
+one output file C.txt.
