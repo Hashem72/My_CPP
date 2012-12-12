@@ -1,0 +1,137 @@
+#include<iostream>
+#include<fstream>
+#include <fstream>
+#include <sstream>
+#include <stdio.h>
+#include<stdlib.h>
+#include <time.h>
+#include <vector>
+#include<set>
+
+#include "overlaps_in_narrow_peaks.hpp"
+
+/** this is to find out the TP, FP, TN and FN of features from two narrowpeak files. Note that it is feature-wise and not base-wise meaning that if one feature from first file is overlapped with another feature from the second file then the tp is counted one
+Note: narrowpeak files ahave 10 columns
+**/
+
+
+
+using namespace std;
+ int main(int argc, char *argv[])
+{
+
+  //////////
+  if(argc <4){
+    cout<<"requires 3  arguments (first_narrow_peak_file, second_narrow_peak_file  and overlap threshold ( a number in (0,1])) ) but you passed only "<<argc<<endl;
+    cout<< "Note: overlap is peakwise and not base-wise, overlap thershold means what fraction of a peak from the second file must overlap with a peak from the first file in order to be acounted as an overlap, ie  overlap_threshold = 1 means that one feature the second file is completely included in peak from the first file, then one overlap is counted\n "<<endl;
+    exit(0);  
+  }
+  
+  std::string first_npf             = argv[1];
+  std::string second_npf            = argv[2];
+  string overlap_thr_as_string      = argv[3];
+
+
+  //////////
+
+
+
+  
+ double overlap_thr = atof(overlap_thr_as_string.c_str()  );
+// std::string first_npf = "/nfs/th_group/hk3/UW_DNaseI_HS/K562_For_Paper_Analysis/Threshold_Optimization/wgEncodeUwDnaseK562AlnRep1_chr22_with_biasness_scores_less_than_2.5.npf";
+//  std::string second_npf = "/nfs/th_group/hk3/SYD_TFS/K562/CTCF/wgEncodeSydhTfbsK562CtcfbIggrabPk_chr22.narrowPeak";
+vector<pair<unsigned int, unsigned int>> *first_vector = get_starts_and_end_of_features(first_npf);
+ vector<pair<unsigned int, unsigned int>> *second_vector = get_starts_and_end_of_features(second_npf);
+ unsigned int number_of_peaks_in_first_file = first_vector->size();
+ std::cout<< "found " << number_of_peaks_in_first_file << " peaks in first file!"<<endl;
+ unsigned int number_of_peaks_in_second_file = second_vector->size();
+ std::cout<< "found " << number_of_peaks_in_second_file << " peaks in second file"<<endl;
+ get_tp_tn_fp_fn(first_vector, second_vector,overlap_thr );
+  return 0;
+}/*main*/
+
+
+
+/////////////////////////////////////////////////// funtions \\\\\\\\\\\\\\\\\\
+
+std::vector<unsigned int> *get_intersection(std::vector<unsigned int> *first_vector, std::vector<unsigned int> *second_vector){
+  std::vector<unsigned int> *inter = new std::vector<unsigned int>;
+  set_intersection(  first_vector->begin(), first_vector->end(),
+		     second_vector-> begin(), second_vector->end(),
+		     back_inserter(*inter));
+  return inter;
+}/*get_intersection*/
+
+
+std::vector<unsigned int> *get_helper_vetor(unsigned int from, unsigned int to){
+  std::vector<unsigned int> *result = new std::vector<unsigned int>;
+  for (unsigned int x = from; x <= to; ++x)
+    {
+      result->push_back(x);
+    }
+  return result;
+}/*get_helper_vetor*/
+
+void get_tp_tn_fp_fn(std::vector<std::pair<unsigned int, unsigned int>> *first_file_features, 
+		     std::vector<std::pair<unsigned int, unsigned int>> *second_file_features, const double overlap_threshold){
+  size_t nf1 = first_file_features->size();
+  size_t nf2 = second_file_features->size();
+  unsigned int tp, fp, fn;
+  for (size_t i=0 ; i < nf1; ++i)
+    {
+      std::pair<unsigned int, unsigned int> one_pair = (*first_file_features)[i];
+      unsigned int start = one_pair.first;
+      unsigned int end = one_pair.second;
+      std::vector<unsigned int> *helper_vector_1 = get_helper_vetor(start, end);
+      size_t length_of_first_peak = helper_vector_1->size();
+      //std::cout<< "length of first peak "<< length_of_first_peak << std::endl; 
+      bool intersect  = false;
+      for (size_t j=0; j<nf2; ++j)
+	{
+	  std::pair<unsigned int, unsigned int > pair_from_second_file = (*second_file_features)[j];
+	  unsigned int start_2 = pair_from_second_file.first;
+	  unsigned int end_2   = pair_from_second_file.second;
+	  std::vector<unsigned int> *helper_vector_2 = get_helper_vetor(start_2, end_2);
+	  size_t length_of_second_peak = helper_vector_2->size();
+	  //std::cout<< "                           length of second peak is: "<< length_of_second_peak<<std::endl;
+	  std::vector<unsigned int> *intersection = get_intersection(helper_vector_1, helper_vector_2);
+	  size_t overlap_length = intersection->size();
+	  delete  helper_vector_2;
+	  if(overlap_length >= overlap_threshold * (double)length_of_second_peak){
+	    // std::cout<<  overlap_length<<std::endl;
+	    intersect = true;
+	  }
+	}
+      delete helper_vector_1;
+      if (intersect == true)
+	{
+	  tp = tp +1;
+	}
+
+     }
+  fp = nf1 -tp;
+  fn = nf2 - tp;
+  cout<< "tp = "<< tp<< " fp = "<<fp<< " fn = "<<fn << " spec = tp/(tp+fp) = "<< (double)tp/nf1 << "sen = tp/tp+fn = "<< (double)tp/nf2<<endl;
+}/*get_tp_tn_fp_fn*/
+
+
+std::vector<pair<unsigned int, unsigned int> > *get_starts_and_end_of_features(std::string input_file){
+vector< pair< unsigned int, unsigned int>> *result = new vector<pair<unsigned int, unsigned int>>;
+//open check if the input file is good!
+ifstream input_f(input_file);
+if (! input_f.good())
+  {
+    cerr<<"couldn't open the file"<<endl;
+  }
+ std::string chr_name, name, strand;
+ unsigned int feature_start, feature_end, score, peak;
+ double s_value, p_value, q_value;
+ while(input_f >> chr_name >> feature_start >> feature_end >> name >> score >> strand >> s_value >> p_value >> q_value >>peak ){
+      pair<unsigned int, unsigned int> one_pair;
+   one_pair.first  = feature_start;
+   one_pair.second = feature_end;
+   result->push_back(one_pair);
+ }
+  return result;
+}/*get_starts_and_end_of_features*/
+

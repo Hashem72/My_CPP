@@ -1,0 +1,9 @@
+#!/bin/sh
+
+TF=GATA1
+OVERLAP_TH=0.3
+for THR in  4 3.5 3 2.5 2 1.5 1 0.5 0 -0.5 -1 -1.5 -2
+do
+bsub -o ${TF}_${THR}_DNase_%J.output -e ${TF}_${THR}_DNase_%J.err -M5000000 -R'"select[mem>5000] rusage[mem=5000]"' ./overlaps_in_narrow_peaks /nfs/th_group/hk3/UW_DNaseI_HS/K562_For_Paper_Analysis/Threshold_Optimization/wgEncodeUwDnaseK562AlnRep1_chr22_with_biasness_scores_less_than_${THR}.npf /nfs/th_group/hk3/SYD_TFS/K562/$TF/wgEncodeSydhTfbsK562Gata1UcdPk_chr22.narrowPeak $OVERLAP_TH
+ done
+#4 3.5 3 2.5 2 1.5 1 0.5 0 -0.5 -1 -1.5 -2
