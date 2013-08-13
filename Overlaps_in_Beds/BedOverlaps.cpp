@@ -1,4 +1,3 @@
-// set_intersection example
 #include<string>
 #include<sstream>
 #include <iostream>
@@ -105,7 +104,7 @@ int  main(int argc, char *argv[]){
 
 
   //write result int the ouput file
-  //write_overalps_into_a_file(output_file, inter_size,size_of_union, size_of_AnotB, size_of_BnotA);
+  //write_overlaps_into_a_file(output_file, inter_size,size_of_union, size_of_AnotB, size_of_BnotA);
 
   return 0;
 }/*main*/
@@ -170,13 +169,13 @@ if (! input_f.good())
 
 
 
-void write_overalps_into_a_file(string output_file, unsigned int intersection, unsigned int uni,  unsigned int a_minus_b, unsigned int b_minus_a){
+void write_overlaps_into_a_file(string output_file, unsigned int intersection, unsigned int uni,  unsigned int a_minus_b, unsigned int b_minus_a){
   ofstream myfile;
   myfile.open(output_file);
   
   myfile<<intersection<<"\t"<<a_minus_b<<"\t"<<b_minus_a<<"\t"<<uni<<endl;
   myfile.close();
-}/*write_overalps_into_a_file*/
+}/*write_overlaps_into_a_file*/
 
 
 
